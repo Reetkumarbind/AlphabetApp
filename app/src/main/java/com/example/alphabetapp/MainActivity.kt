@@ -11,6 +11,7 @@ import androidx.compose.animation.core.*
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -27,7 +28,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -56,10 +59,27 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             AlphabetAppTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    AlphabetLearningApp(
-                        modifier = Modifier.padding(innerPadding)
-                    )
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(
+                            Brush.verticalGradient(
+                                colors = listOf(
+                                    Color(0xFF667eea),
+                                    Color(0xFF764ba2),
+                                    Color(0xFFf093fb)
+                                )
+                            )
+                        )
+                ) {
+                    Scaffold(
+                        modifier = Modifier.fillMaxSize(),
+                        containerColor = Color.Transparent
+                    ) { innerPadding ->
+                        AlphabetLearningApp(
+                            modifier = Modifier.padding(innerPadding)
+                        )
+                    }
                 }
             }
         }
@@ -107,12 +127,25 @@ fun AlphabetLearningApp(modifier: Modifier = Modifier) {
         )
     }
     
-    Column(
+    Box(
         modifier = modifier
             .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+            .background(
+                Brush.verticalGradient(
+                    colors = listOf(
+                        Color(0xFF667eea),
+                        Color(0xFF764ba2),
+                        Color(0xFFf093fb)
+                    )
+                )
+            )
     ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(20.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
         // App Logo
         AppLogo(
             modifier = Modifier.padding(bottom = 16.dp)
@@ -139,15 +172,27 @@ fun AlphabetLearningApp(modifier: Modifier = Modifier) {
             }
         }
         
-        // Main letter card
+        // Main letter card with swipe functionality
         AlphabetCard(
             alphabetItem = alphabetData[currentIndex],
+            onSwipeLeft = {
+                if (currentIndex < alphabetData.size - 1) {
+                    currentIndex++
+                    speakLetterAndWord(alphabetData[currentIndex])
+                }
+            },
+            onSwipeRight = {
+                if (currentIndex > 0) {
+                    currentIndex--
+                    speakLetterAndWord(alphabetData[currentIndex])
+                }
+            },
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f)
         )
         
-        // Navigation buttons with audio
+        // Navigation buttons with audio - Modern Design
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -155,25 +200,45 @@ fun AlphabetLearningApp(modifier: Modifier = Modifier) {
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Button(
+            // Previous Button
+            IconButton(
                 onClick = { 
                     if (currentIndex > 0) {
                         currentIndex--
                         speakLetterAndWord(alphabetData[currentIndex])
                     }
                 },
-                enabled = currentIndex > 0
+                enabled = currentIndex > 0,
+                modifier = Modifier
+                    .background(
+                        if (currentIndex > 0) {
+                            Brush.radialGradient(
+                                colors = listOf(
+                                    Color(0xFF4ECDC4),
+                                    Color(0xFF44A08D)
+                                )
+                            )
+                        } else {
+                            Brush.radialGradient(
+                                colors = listOf(
+                                    Color.White.copy(alpha = 0.3f),
+                                    Color.White.copy(alpha = 0.1f)
+                                )
+                            )
+                        },
+                        CircleShape
+                    )
+                    .size(64.dp)
             ) {
                 Icon(
                     Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = null,
-                    modifier = Modifier.size(24.dp)
+                    contentDescription = "Previous letter",
+                    tint = if (currentIndex > 0) Color.White else Color.White.copy(alpha = 0.5f),
+                    modifier = Modifier.size(36.dp)
                 )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Previous")
             }
             
-            // Audio button for current letter
+            // Audio button for current letter - Center
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
@@ -183,26 +248,35 @@ fun AlphabetLearningApp(modifier: Modifier = Modifier) {
                     },
                     modifier = Modifier
                         .background(
-                            MaterialTheme.colorScheme.primaryContainer,
+                            Brush.radialGradient(
+                                colors = listOf(
+                                    Color(0xFFFF6B6B),
+                                    Color(0xFFFF8E53)
+                                )
+                            ),
                             CircleShape
                         )
+                        .size(72.dp)
                 ) {
                     Icon(
                         Icons.Default.PlayArrow,
                         contentDescription = "Play sound",
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(32.dp)
+                        tint = Color.White,
+                        modifier = Modifier.size(40.dp)
                     )
                 }
                 
                 Text(
                     text = "${currentIndex + 1} / ${alphabetData.size}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.White.copy(alpha = 0.9f),
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(top = 8.dp)
                 )
             }
             
-            Button(
+            // Next Button
+            IconButton(
                 onClick = { 
                     if (currentIndex < alphabetData.size - 1) {
                         currentIndex++
@@ -210,16 +284,47 @@ fun AlphabetLearningApp(modifier: Modifier = Modifier) {
                     }
                 },
                 enabled = currentIndex < alphabetData.size - 1,
-                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+                modifier = Modifier
+                    .background(
+                        if (currentIndex < alphabetData.size - 1) {
+                            Brush.radialGradient(
+                                colors = listOf(
+                                    Color(0xFF45B7D1),
+                                    Color(0xFF2980B9)
+                                )
+                            )
+                        } else {
+                            Brush.radialGradient(
+                                colors = listOf(
+                                    Color.White.copy(alpha = 0.3f),
+                                    Color.White.copy(alpha = 0.1f)
+                                )
+                            )
+                        },
+                        CircleShape
+                    )
+                    .size(64.dp)
             ) {
-                Text("Next")
-                Spacer(modifier = Modifier.width(8.dp))
                 Icon(
                     Icons.AutoMirrored.Filled.ArrowForward,
-                    contentDescription = null,
-                    modifier = Modifier.size(24.dp)
+                    contentDescription = "Next letter",
+                    tint = if (currentIndex < alphabetData.size - 1) Color.White else Color.White.copy(alpha = 0.5f),
+                    modifier = Modifier.size(36.dp)
                 )
             }
+        }
+        
+        // Footer text
+        Text(
+            text = "Reet Kumar Bind",
+            fontSize = 16.sp,
+            color = Color.White.copy(alpha = 0.8f),
+            textAlign = TextAlign.Center,
+            fontWeight = FontWeight.Medium,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 16.dp, bottom = 8.dp)
+        )
         }
     }
 }
@@ -228,44 +333,55 @@ fun AlphabetLearningApp(modifier: Modifier = Modifier) {
 fun AppLogo(modifier: Modifier = Modifier) {
     Card(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer
+            containerColor = Color.White.copy(alpha = 0.95f)
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .background(
+                    Brush.horizontalGradient(
+                        colors = listOf(
+                            Color(0xFFFF6B6B),
+                            Color(0xFF4ECDC4),
+                            Color(0xFF45B7D1),
+                            Color(0xFFFECA57)
+                        )
+                    ),
+                    RoundedCornerShape(20.dp)
+                )
+                .padding(20.dp),
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Logo with colorful letters
             Text(
-                text = "🔤",
-                fontSize = 32.sp,
-                modifier = Modifier.padding(end = 8.dp)
+                text = "🌟",
+                fontSize = 36.sp,
+                modifier = Modifier.padding(end = 12.dp)
             )
             
             Text(
                 text = "Alphabet",
-                fontSize = 28.sp,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary
+                fontSize = 32.sp,
+                fontWeight = FontWeight.ExtraBold,
+                color = Color.White
             )
             
             Text(
                 text = "App",
-                fontSize = 28.sp,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.secondary
+                fontSize = 32.sp,
+                fontWeight = FontWeight.ExtraBold,
+                color = Color.White
             )
             
             Text(
-                text = "📚",
-                fontSize = 32.sp,
-                modifier = Modifier.padding(start = 8.dp)
+                text = "🎨",
+                fontSize = 36.sp,
+                modifier = Modifier.padding(start = 12.dp)
             )
         }
     }
@@ -278,23 +394,42 @@ fun LetterButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val animatedScale by animateFloatAsState(
+        targetValue = if (isSelected) 1.2f else 1f,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
+        label = "button_scale"
+    )
+    
     Box(
         modifier = modifier
-            .size(48.dp)
+            .size(52.dp)
+            .scale(animatedScale)
             .clip(CircleShape)
             .background(
-                if (isSelected) MaterialTheme.colorScheme.primary
-                else MaterialTheme.colorScheme.surfaceVariant
+                if (isSelected) {
+                    Brush.radialGradient(
+                        colors = listOf(
+                            Color(0xFFFF6B6B),
+                            Color(0xFFFF8E53)
+                        )
+                    )
+                } else {
+                    Brush.radialGradient(
+                        colors = listOf(
+                            Color.White.copy(alpha = 0.9f),
+                            Color.White.copy(alpha = 0.7f)
+                        )
+                    )
+                }
             )
             .clickable { onClick() },
         contentAlignment = Alignment.Center
     ) {
         Text(
             text = letter,
-            color = if (isSelected) MaterialTheme.colorScheme.onPrimary
-                   else MaterialTheme.colorScheme.onSurfaceVariant,
-            fontWeight = FontWeight.Bold,
-            fontSize = 18.sp
+            color = if (isSelected) Color.White else Color(0xFF2D3748),
+            fontWeight = FontWeight.ExtraBold,
+            fontSize = 20.sp
         )
     }
 }
@@ -302,6 +437,8 @@ fun LetterButton(
 @Composable
 fun AlphabetCard(
     alphabetItem: AlphabetItem,
+    onSwipeLeft: () -> Unit = {},
+    onSwipeRight: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     // Animation for card entrance
@@ -380,7 +517,26 @@ fun AlphabetCard(
                         .background(
                             Color.Gray.copy(alpha = 0.2f),
                             CircleShape
-                        ),
+                        )
+                        .pointerInput(Unit) {
+                            detectDragGestures(
+                                onDragEnd = {
+                                    // Gesture completed
+                                }
+                            ) { change, dragAmount ->
+                                val (x, y) = dragAmount
+                                when {
+                                    x > 50 -> {
+                                        // Swipe right - go to previous letter
+                                        onSwipeRight()
+                                    }
+                                    x < -50 -> {
+                                        // Swipe left - go to next letter
+                                        onSwipeLeft()
+                                    }
+                                }
+                            }
+                        },
                     contentAlignment = Alignment.Center
                 ) {
                     if (alphabetItem.imageRes != 0) {
